@@ -1,14 +1,15 @@
 import cors from "cors";
 import express from "express";
-import env from "./config/env.js";
 import authRoutes from "./routes/auth.routes.js";
+import publicRoutes from "./routes/public.routes.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 const app = express();
+const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
 
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin: clientUrl,
     credentials: true,
   }),
 );
@@ -22,6 +23,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/public", publicRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

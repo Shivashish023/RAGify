@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
-import env from "../config/env.js";
 
 function generateToken(payload) {
-  return jwt.sign(payload, env.jwtSecret, { expiresIn: "7d" });
+  const jwtSecret = process.env.JWT_SECRET || "ragify-dev-secret";
+  return jwt.sign(payload, jwtSecret, { expiresIn: "7d" });
 }
 
 export default generateToken;

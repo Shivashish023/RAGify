@@ -1,6 +1,10 @@
+import "dotenv/config";
 import app from "./app.js";
-import env from "./config/env.js";
+import connectDb from "./config/db.js";
+const port = process.env.PORT || 5000;
 
-app.listen(env.port, () => {
-  console.log(`RAGify API running on http://localhost:${env.port}`);
+await connectDb();
+
+app.listen(port, () => {
+  console.log(`RAGify API running on http://localhost:${port}`);
 });

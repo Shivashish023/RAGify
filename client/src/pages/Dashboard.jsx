@@ -2,14 +2,14 @@ import Navbar from "../components/common/Navbar";
 import PageShell from "../components/layout/PageShell";
 import { useAuth } from "../context/AuthContext";
 
-const stats = [
-  { label: "Documents", value: "0", detail: "Ready for upload module" },
-  { label: "Conversations", value: "0", detail: "Chat module not connected" },
-  { label: "Users", value: "1", detail: "Demo admin session" },
-];
-
 function Dashboard() {
   const { user } = useAuth();
+  const chatbotUrl = `${window.location.origin}/chat/${user?.organizationSlug || ""}`;
+  const stats = [
+    { label: "Documents", value: "0", detail: "Ready for upload module" },
+    { label: "Conversations", value: "0", detail: "Chat module not connected" },
+    { label: "Users", value: "1", detail: `${user?.role || "admin"} account` },
+  ];
 
   return (
     <PageShell>
@@ -23,8 +23,8 @@ function Dashboard() {
             Welcome, {user?.name || "Admin"}
           </h1>
           <p className="mt-3 max-w-2xl text-[#52616f]">
-            This is the base dashboard shell. The next build step can add real
-            document uploads, organization data, and conversation analytics.
+            {user?.organizationName || "Your company"} now has a workspace and a
+            public chatbot route. Document uploads and conversations come next.
           </p>
         </div>
 
@@ -39,11 +39,59 @@ function Dashboard() {
         </div>
 
         <div className="mt-6 rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#121923]">Starter structure is active</h2>
-          <p className="mt-2 text-sm leading-6 text-[#52616f]">
-            Client routing, login state, protected pages, and the Node health/auth
-            API are now in place.
+          <h2 className="text-lg font-semibold text-[#121923]">Public chatbot link</h2>
+          <div className="mt-3 rounded-lg border border-[#e4ebf2] bg-[#fbfcfd] px-4 py-3">
+            <a
+              href={chatbotUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="break-all text-sm font-semibold text-[#145c72]"
+            >
+              {chatbotUrl}
+            </a>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-[#52616f]">
+            This link resolves your company by slug. Customers will use this page
+            to chat with your company chatbot.
           </p>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-[#121923]">Organization</h2>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7886]">Company</dt>
+                <dd className="font-medium text-[#243241]">{user?.organizationName}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7886]">Slug</dt>
+                <dd className="font-medium text-[#243241]">{user?.organizationSlug}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7886]">Status</dt>
+                <dd className="font-medium text-[#243241]">{user?.chatbotStatus}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-[#121923]">Admin account</h2>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7886]">Name</dt>
+                <dd className="font-medium text-[#243241]">{user?.name}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7886]">Email</dt>
+                <dd className="font-medium text-[#243241]">{user?.email}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7886]">Role</dt>
+                <dd className="font-medium text-[#243241]">{user?.role}</dd>
+              </div>
+            </dl>
+          </div>
         </div>
       </section>
     </PageShell>

@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import { login as loginRequest } from "../services/authService";
+import { login as loginRequest, register as registerRequest } from "../services/authService";
 
 const AuthContext = createContext(null);
 
@@ -21,6 +21,15 @@ export function AuthProvider({ children }) {
     return response.user;
   };
 
+  const register = async (payload) => {
+    const response = await registerRequest(payload);
+    localStorage.setItem("ragify_token", response.token);
+    localStorage.setItem("ragify_user", JSON.stringify(response.user));
+    setToken(response.token);
+    setUser(response.user);
+    return response.user;
+  };
+
   const logout = () => {
     localStorage.removeItem("ragify_token");
     localStorage.removeItem("ragify_user");
@@ -33,6 +42,7 @@ export function AuthProvider({ children }) {
       user,
       token,
       login,
+      register,
       logout,
       isAuthenticated: Boolean(token && user),
     }),

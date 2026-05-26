@@ -42,12 +42,20 @@ function Navbar() {
               </button>
             </>
           ) : (
-            <Link
-              to="/login"
-              className="rounded-lg bg-[#145c72] px-4 py-2 text-white shadow-sm transition hover:bg-[#104a5c]"
-            >
-              Login
-            </Link>
+            <>
+              <Link
+                to="/login"
+                className="rounded-lg border border-[#cfd8e3] px-4 py-2 text-[#243241] transition hover:border-[#145c72] hover:text-[#145c72]"
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="rounded-lg bg-[#145c72] px-4 py-2 text-white shadow-sm transition hover:bg-[#104a5c]"
+              >
+                Register
+              </Link>
+            </>
           )}
         </nav>
       </div>

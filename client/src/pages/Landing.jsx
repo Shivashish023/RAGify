@@ -27,10 +27,10 @@ function Landing() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/login"
+              to="/register"
               className="rounded-lg bg-[#145c72] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#104a5c]"
             >
-              Open login
+              Create workspace
             </Link>
             <Link
               to="/dashboard"
@@ -66,7 +66,7 @@ function Landing() {
 
           <div className="mt-5 rounded-lg bg-[#17202a] p-4 text-white">
             <p className="text-sm text-[#b8c5cf]">Next milestone</p>
-            <p className="mt-2 text-xl font-semibold">Wire real JWT auth and MongoDB models.</p>
+            <p className="mt-2 text-xl font-semibold">Upload documents and connect the chat flow.</p>
           </div>
         </div>
       </section>
