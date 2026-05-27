@@ -1,14 +1,49 @@
+import { useEffect, useState } from "react";
 import Navbar from "../components/common/Navbar";
 import PageShell from "../components/layout/PageShell";
 import { useAuth } from "../context/AuthContext";
+import { getDashboardStats } from "../services/dashboardService";
 
 function Dashboard() {
   const { user } = useAuth();
+  const [dashboardStats, setDashboardStats] = useState({
+    totalVisitors: 0,
+    totalConversations: 0,
+    totalMessages: 0,
+  });
+  const [statsStatus, setStatsStatus] = useState("loading");
   const chatbotUrl = `${window.location.origin}/chat/${user?.organizationSlug || ""}`;
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await getDashboardStats();
+        setDashboardStats(data);
+        setStatsStatus("ready");
+      } catch (error) {
+        setStatsStatus("error");
+      }
+    }
+
+    loadStats();
+  }, []);
+
   const stats = [
-    { label: "Documents", value: "0", detail: "Ready for upload module" },
-    { label: "Conversations", value: "0", detail: "Chat module not connected" },
-    { label: "Users", value: "1", detail: `${user?.role || "admin"} account` },
+    {
+      label: "Visitors",
+      value: dashboardStats.totalVisitors,
+      detail: "People who started chat",
+    },
+    {
+      label: "Conversations",
+      value: dashboardStats.totalConversations,
+      detail: "Customer chat sessions",
+    },
+    {
+      label: "Messages",
+      value: dashboardStats.totalMessages,
+      detail: "Visitor and bot messages",
+    },
   ];
 
   return (
@@ -32,11 +67,19 @@ function Dashboard() {
           {stats.map((stat) => (
             <div key={stat.label} className="rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
               <p className="text-sm font-medium text-[#6b7886]">{stat.label}</p>
-              <p className="mt-3 text-4xl font-semibold tracking-tight text-[#121923]">{stat.value}</p>
+              <p className="mt-3 text-4xl font-semibold tracking-tight text-[#121923]">
+                {statsStatus === "loading" ? "-" : stat.value}
+              </p>
               <p className="mt-3 text-sm text-[#52616f]">{stat.detail}</p>
             </div>
           ))}
         </div>
+
+        {statsStatus === "error" && (
+          <div className="mt-4 rounded-lg border border-[#f0c8c8] bg-[#fff5f5] px-4 py-3 text-sm text-[#a33a3a]">
+            Unable to load dashboard stats right now.
+          </div>
+        )}
 
         <div className="mt-6 rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-[#121923]">Public chatbot link</h2>
