@@ -33,6 +33,14 @@ function Navbar() {
               >
                 Dashboard
               </NavLink>
+              <NavLink
+                to="/documents"
+                className={({ isActive }) =>
+                  `px-3 py-2 text-[#52616f] ${isActive ? "text-[#145c72]" : ""}`
+                }
+              >
+                Documents
+              </NavLink>
               <button
                 type="button"
                 onClick={logout}

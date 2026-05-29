@@ -3,6 +3,7 @@ import express from "express";
 import authRoutes from "./routes/auth.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import documentRoutes from "./routes/document.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
@@ -26,6 +27,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/documents", documentRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/public/chat", chatRoutes);
 
