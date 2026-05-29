@@ -17,3 +17,12 @@ export async function uploadDocument(file) {
 
   return data.document;
 }
+
+export async function getDocumentFile(documentId, download = false) {
+  const { data } = await api.get(`/documents/${documentId}/file`, {
+    params: { download },
+    responseType: "blob",
+  });
+
+  return data;
+}

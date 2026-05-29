@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/common/Navbar";
 import PageShell from "../components/layout/PageShell";
-import { getDocuments, uploadDocument } from "../services/documentService";
+import { getDocumentFile, getDocuments, uploadDocument } from "../services/documentService";
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("en", {
@@ -52,6 +52,20 @@ function Documents() {
     } catch (err) {
       setError(err.response?.data?.message || "Unable to upload document");
       setUploadStatus("idle");
+    }
+  };
+
+  const handleFileAction = async (document) => {
+    try {
+      setError("");
+      const blob = await getDocumentFile(document._id);
+      const fileUrl = URL.createObjectURL(blob);
+
+      window.open(fileUrl, "_blank", "noopener,noreferrer");
+
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to open document");
     }
   };
 
@@ -126,7 +140,7 @@ function Documents() {
                     <th className="px-5 py-3 font-semibold">Type</th>
                     <th className="px-5 py-3 font-semibold">Status</th>
                     <th className="px-5 py-3 font-semibold">Uploaded</th>
-                    <th className="px-5 py-3 font-semibold">File URL</th>
+                    <th className="px-5 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e7edf3]">
@@ -143,14 +157,13 @@ function Documents() {
                       </td>
                       <td className="px-5 py-4 text-[#52616f]">{formatDate(document.createdAt)}</td>
                       <td className="px-5 py-4">
-                        <a
-                          href={document.cloudinaryUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => handleFileAction(document)}
                           className="font-semibold text-[#145c72]"
                         >
                           Open
-                        </a>
+                        </button>
                       </td>
                     </tr>
                   ))}
