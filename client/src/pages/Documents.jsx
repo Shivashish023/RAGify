@@ -154,6 +154,11 @@ function Documents() {
                         <span className="rounded-md bg-[#e9f6f3] px-2.5 py-1 text-xs font-semibold text-[#21705f]">
                           {document.status}
                         </span>
+                        {document.status === "failed" && document.errorMessage && (
+                          <p className="mt-2 max-w-xs text-xs leading-5 text-[#a33a3a]">
+                            {document.errorMessage}
+                          </p>
+                        )}
                       </td>
                       <td className="px-5 py-4 text-[#52616f]">{formatDate(document.createdAt)}</td>
                       <td className="px-5 py-4">

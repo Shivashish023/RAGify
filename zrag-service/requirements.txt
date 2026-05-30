@@ -5,3 +5,7 @@ pydantic
 httpx
 pypdf
 mammoth
+langchain-text-splitters
+langchain-huggingface
+sentence-transformers
+pinecone

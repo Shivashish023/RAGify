@@ -2,8 +2,9 @@ from fastapi import APIRouter, Header, HTTPException
 
 from app.config import settings
 from app.schemas.ingest_schema import IngestRequest, IngestResponse
-from app.services.file_downloader import download_file
-from app.services.text_extractor import extract_text
+from app.services.embeddings import create_embeddings
+from app.services.ingestion import ingest_file
+from app.services.pinecone_service import upsert_document_chunks
 
 router = APIRouter(prefix="/api", tags=["ingest"])
 SUPPORTED_FILE_TYPES = {"pdf", "docx", "txt"}
@@ -25,19 +26,35 @@ async def ingest_document(
         raise HTTPException(status_code=400, detail="Unsupported file type")
 
     try:
-        file_bytes = await download_file(str(payload.fileUrl))
-        text = extract_text(file_bytes, payload.fileType)
+        text, chunks = await ingest_file(str(payload.fileUrl), payload.fileType)
     except Exception as exc:
-        raise HTTPException(status_code=422, detail=f"Unable to extract text: {exc}") from exc
+        detail = f"Text extraction failed: {exc}"
+        print(detail)
+        raise HTTPException(status_code=422, detail=detail) from exc
 
-    if not text.strip():
-        raise HTTPException(status_code=422, detail="No readable text found in document")
+    try:
+        embeddings = create_embeddings(chunks)
+    except Exception as exc:
+        detail = f"Hugging Face embedding failed: {exc}"
+        print(detail)
+        raise HTTPException(status_code=422, detail=detail) from exc
 
-    chunk_count = max(1, (len(text) + 2999) // 3000)
+    try:
+        upsert_document_chunks(
+            organization_id=payload.organizationId,
+            document_id=payload.documentId,
+            file_name=payload.fileName,
+            chunks=chunks,
+            embeddings=embeddings,
+        )
+    except Exception as exc:
+        detail = f"Pinecone upsert failed: {exc}"
+        print(detail)
+        raise HTTPException(status_code=422, detail=detail) from exc
 
     return IngestResponse(
         success=True,
         documentId=payload.documentId,
-        chunkCount=chunk_count,
+        chunkCount=len(chunks),
         textLength=len(text),
     )
