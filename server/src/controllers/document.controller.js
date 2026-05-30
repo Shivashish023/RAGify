@@ -1,4 +1,5 @@
 import Document from "../models/Document.js";
+import { ingestDocument } from "../services/ragApi.service.js";
 import { uploadBufferToCloudinary } from "../services/cloudinary.service.js";
 
 const mimeToFileType = {
@@ -34,8 +35,24 @@ export async function uploadDocument(req, res, next) {
       fileType,
       cloudinaryUrl: uploadResult.secure_url,
       cloudinaryPublicId: uploadResult.public_id,
-      status: "uploaded",
+      status: "processing",
     });
+
+    try {
+      const ingestResult = await ingestDocument(document);
+      document.status = "completed";
+      document.chunkCount = ingestResult.chunkCount || 0;
+      document.errorMessage = "";
+      await document.save();
+    } catch (ingestError) {
+      document.status = "failed";
+      document.errorMessage =
+        ingestError.response?.data?.detail ||
+        ingestError.response?.data?.message ||
+        ingestError.message ||
+        "Document ingestion failed";
+      await document.save();
+    }
 
     return res.status(201).json({ document });
   } catch (error) {
