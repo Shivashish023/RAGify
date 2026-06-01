@@ -4,6 +4,38 @@ import Navbar from "../components/common/Navbar";
 import PageShell from "../components/layout/PageShell";
 import { useAuth } from "../context/AuthContext";
 import { getDashboardStats } from "../services/dashboardService";
+import Alert from "../components/ui/Alert";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import { Card, CardBody } from "../components/ui/Card";
+import { PageHeader } from "../components/ui/PageHeader";
+
+function StatCard({ label, value, detail, loading }) {
+  return (
+    <Card className="group transition hover:shadow-[var(--shadow-glow)]">
+      <CardBody>
+        <p className="text-sm font-medium text-ink-muted">{label}</p>
+        <p className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink">
+          {loading ? (
+            <span className="inline-block h-10 w-16 animate-pulse-soft rounded-lg bg-brand-light" />
+          ) : (
+            value
+          )}
+        </p>
+        <p className="mt-2 text-sm text-ink-faint">{detail}</p>
+      </CardBody>
+    </Card>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-border/80 py-3 last:border-0 last:pb-0">
+      <dt className="text-sm text-ink-muted">{label}</dt>
+      <dd className="text-right text-sm font-semibold text-ink">{value || "—"}</dd>
+    </div>
+  );
+}
 
 function Dashboard() {
   const { user } = useAuth();
@@ -21,7 +53,7 @@ function Dashboard() {
         const data = await getDashboardStats();
         setDashboardStats(data);
         setStatsStatus("ready");
-      } catch (error) {
+      } catch {
         setStatsStatus("error");
       }
     }
@@ -47,108 +79,105 @@ function Dashboard() {
     },
   ];
 
+  const chatbotActive = user?.chatbotStatus === "active";
+
   return (
     <PageShell>
       <Navbar />
       <section className="mx-auto max-w-6xl px-5 py-10">
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#307d89]">
-            Admin dashboard
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#121923]">
-            Welcome, {user?.name || "Admin"}
-          </h1>
-          <p className="mt-3 max-w-2xl text-[#52616f]">
-            {user?.organizationName || "Your company"} now has a workspace and a
-            public chatbot route. Document uploads and conversations come next.
-          </p>
-        </div>
+        <PageHeader
+          eyebrow="Admin dashboard"
+          title={`Welcome back, ${user?.name || "Admin"}`}
+          description={`Manage ${user?.organizationName || "your company"}'s knowledge base, monitor chat activity, and share your public support link.`}
+        />
 
         <div className="grid gap-4 md:grid-cols-3">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-[#6b7886]">{stat.label}</p>
-              <p className="mt-3 text-4xl font-semibold tracking-tight text-[#121923]">
-                {statsStatus === "loading" ? "-" : stat.value}
-              </p>
-              <p className="mt-3 text-sm text-[#52616f]">{stat.detail}</p>
+          {stats.map((stat, index) => (
+            <div key={stat.label} className={`animate-fade-up stagger-${index + 1}`}>
+              <StatCard
+                label={stat.label}
+                value={stat.value}
+                detail={stat.detail}
+                loading={statsStatus === "loading"}
+              />
             </div>
           ))}
         </div>
 
-        {statsStatus === "error" && (
-          <div className="mt-4 rounded-lg border border-[#f0c8c8] bg-[#fff5f5] px-4 py-3 text-sm text-[#a33a3a]">
-            Unable to load dashboard stats right now.
+        {statsStatus === "error" ? (
+          <div className="mt-4">
+            <Alert>Unable to load dashboard stats right now.</Alert>
           </div>
-        )}
+        ) : null}
 
-        <div className="mt-6 rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#121923]">Public chatbot link</h2>
-          <div className="mt-3 rounded-lg border border-[#e4ebf2] bg-[#fbfcfd] px-4 py-3">
-            <a
-              href={chatbotUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="break-all text-sm font-semibold text-[#145c72]"
-            >
-              {chatbotUrl}
-            </a>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-[#52616f]">
-            This link resolves your company by slug. Customers will use this page
-            to chat with your company chatbot.
-          </p>
+        <div className="mt-8 grid gap-6 lg:grid-cols-5">
+          <Card className="animate-fade-up stagger-2 lg:col-span-3">
+            <CardBody>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-ink">Public chatbot</h2>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    Share this link with customers to start support conversations.
+                  </p>
+                </div>
+                <Badge variant={chatbotActive ? "success" : "warning"}>
+                  {user?.chatbotStatus || "unknown"}
+                </Badge>
+              </div>
+              <div className="mt-4 rounded-xl border border-border bg-surface-raised px-4 py-3.5">
+                <a
+                  href={chatbotUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="break-all text-sm font-semibold text-brand hover:text-brand-dark"
+                >
+                  {chatbotUrl}
+                </a>
+              </div>
+              <a href={chatbotUrl} target="_blank" rel="noreferrer" className="mt-4 inline-block">
+                <Button variant="secondary" size="sm">
+                  Open chat page →
+                </Button>
+              </a>
+            </CardBody>
+          </Card>
+
+          <Card className="animate-fade-up stagger-3 lg:col-span-2">
+            <CardBody className="flex h-full flex-col">
+              <h2 className="font-display text-xl font-semibold text-ink">Knowledge base</h2>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">
+                Upload PDF, DOCX, or TXT files. They are embedded and used to answer customer
+                questions.
+              </p>
+              <Link to="/documents" className="mt-5">
+                <Button className="w-full">Manage documents</Button>
+              </Link>
+            </CardBody>
+          </Card>
         </div>
 
-        <div className="mt-6 rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#121923]">Knowledge base</h2>
-          <p className="mt-2 text-sm leading-6 text-[#52616f]">
-            Upload company files so they can be processed for RAG in the next milestone.
-          </p>
-          <Link
-            to="/documents"
-            className="mt-4 inline-block rounded-lg bg-[#145c72] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#104a5c]"
-          >
-            Manage documents
-          </Link>
-        </div>
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardBody>
+              <h2 className="font-display text-lg font-semibold text-ink">Organization</h2>
+              <dl className="mt-2">
+                <DetailRow label="Company" value={user?.organizationName} />
+                <DetailRow label="Slug" value={user?.organizationSlug} />
+                <DetailRow label="Chatbot" value={user?.chatbotStatus} />
+              </dl>
+            </CardBody>
+          </Card>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#121923]">Organization</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7886]">Company</dt>
-                <dd className="font-medium text-[#243241]">{user?.organizationName}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7886]">Slug</dt>
-                <dd className="font-medium text-[#243241]">{user?.organizationSlug}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7886]">Status</dt>
-                <dd className="font-medium text-[#243241]">{user?.chatbotStatus}</dd>
-              </div>
-            </dl>
-          </div>
-
-          <div className="rounded-lg border border-[#dce3ea] bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#121923]">Admin account</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7886]">Name</dt>
-                <dd className="font-medium text-[#243241]">{user?.name}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7886]">Email</dt>
-                <dd className="font-medium text-[#243241]">{user?.email}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7886]">Role</dt>
-                <dd className="font-medium text-[#243241]">{user?.role}</dd>
-              </div>
-            </dl>
-          </div>
+          <Card>
+            <CardBody>
+              <h2 className="font-display text-lg font-semibold text-ink">Admin account</h2>
+              <dl className="mt-2">
+                <DetailRow label="Name" value={user?.name} />
+                <DetailRow label="Email" value={user?.email} />
+                <DetailRow label="Role" value={user?.role} />
+              </dl>
+            </CardBody>
+          </Card>
         </div>
       </section>
     </PageShell>

@@ -1,68 +1,63 @@
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import Button from "../ui/Button";
+
+const navLinkClass = ({ isActive }) =>
+  `rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
+    isActive
+      ? "bg-brand-light text-brand"
+      : "text-ink-muted hover:bg-white/80 hover:text-ink"
+  }`;
 
 function Navbar() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
 
   return (
-    <header className="border-b border-[#dce3ea] bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-        <Link to="/" className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#145c72] text-sm font-bold text-white">
-            R
+    <header className="sticky top-0 z-50 border-b border-border/80 glass-nav">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
+        <Link to="/" className="group flex items-center gap-3">
+          <span className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-linear-to-br from-brand to-brand-glow text-sm font-bold text-white shadow-[var(--shadow-soft)] transition group-hover:shadow-[var(--shadow-glow)]">
+            <span className="font-display text-lg leading-none">R</span>
           </span>
-          <span className="text-lg font-semibold tracking-tight">RAGify</span>
+          <span className="flex flex-col">
+            <span className="font-display text-lg font-semibold leading-tight tracking-tight text-ink">
+              RAGify
+            </span>
+            {isAuthenticated && user?.organizationName ? (
+              <span className="text-xs text-ink-faint">{user.organizationName}</span>
+            ) : (
+              <span className="text-xs text-ink-faint">Knowledge-powered support</span>
+            )}
+          </span>
         </Link>
 
-        <nav className="flex items-center gap-3 text-sm font-medium">
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              `hidden px-3 py-2 text-[#52616f] sm:inline-block ${isActive ? "text-[#145c72]" : ""}`
-            }
-          >
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <NavLink to="/" className={navLinkClass} end>
             Home
           </NavLink>
           {isAuthenticated ? (
             <>
-              <NavLink
-                to="/dashboard"
-                className={({ isActive }) =>
-                  `px-3 py-2 text-[#52616f] ${isActive ? "text-[#145c72]" : ""}`
-                }
-              >
+              <NavLink to="/dashboard" className={navLinkClass}>
                 Dashboard
               </NavLink>
-              <NavLink
-                to="/documents"
-                className={({ isActive }) =>
-                  `px-3 py-2 text-[#52616f] ${isActive ? "text-[#145c72]" : ""}`
-                }
-              >
+              <NavLink to="/documents" className={navLinkClass}>
                 Documents
               </NavLink>
-              <button
-                type="button"
-                onClick={logout}
-                className="rounded-lg border border-[#cfd8e3] px-4 py-2 text-[#243241] transition hover:border-[#145c72] hover:text-[#145c72]"
-              >
+              <Button variant="ghost" size="sm" onClick={logout} className="ml-1">
                 Logout
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <Link
-                to="/login"
-                className="rounded-lg border border-[#cfd8e3] px-4 py-2 text-[#243241] transition hover:border-[#145c72] hover:text-[#145c72]"
-              >
+              <NavLink to="/login" className={navLinkClass}>
                 Login
-              </Link>
-              <Link
+              </NavLink>
+              <NavLink
                 to="/register"
-                className="rounded-lg bg-[#145c72] px-4 py-2 text-white shadow-sm transition hover:bg-[#104a5c]"
+                className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-soft)] transition hover:bg-brand-dark"
               >
-                Register
-              </Link>
+                Get started
+              </NavLink>
             </>
           )}
         </nav>

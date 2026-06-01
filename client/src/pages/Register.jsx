@@ -3,6 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/common/Navbar";
 import PageShell from "../components/layout/PageShell";
 import { useAuth } from "../context/AuthContext";
+import Alert from "../components/ui/Alert";
+import Button from "../components/ui/Button";
+import { Card, CardBody } from "../components/ui/Card";
+import { Field, Input } from "../components/ui/Input";
+import { PageHeader } from "../components/ui/PageHeader";
 
 function Register() {
   const navigate = useNavigate();
@@ -39,106 +44,80 @@ function Register() {
   return (
     <PageShell>
       <Navbar />
-      <section className="mx-auto grid min-h-[calc(100vh-73px)] max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#307d89]">
-            Create workspace
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#121923]">
-            Register your company and get a chatbot link.
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-[#52616f]">
-            This creates your organization, your first admin account, and a
-            public chatbot URL that customers can open later.
-          </p>
-        </div>
+      <section className="mx-auto grid min-h-[calc(100vh-65px)] max-w-6xl gap-10 px-5 py-12 lg:grid-cols-2 lg:items-center">
+        <PageHeader
+          className="mb-0"
+          eyebrow="Get started"
+          title="Register your company"
+          description="Create your organization, admin account, and a public chatbot URL in one step."
+        />
 
-        <div className="rounded-lg border border-[#dce3ea] bg-white p-6 shadow-sm sm:p-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold tracking-tight text-[#121923]">
-              Company registration
-            </h2>
-            <p className="mt-2 text-sm text-[#6b7886]">
-              You will become the admin for this organization.
+        <Card className="animate-fade-up stagger-2">
+          <CardBody>
+            <h2 className="font-display text-2xl font-semibold text-ink">Company registration</h2>
+            <p className="mt-2 text-sm text-ink-muted">You will be the admin for this workspace.</p>
+
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+              <Field label="Company name">
+                <Input
+                  type="text"
+                  name="organizationName"
+                  value={form.organizationName}
+                  onChange={handleChange}
+                  placeholder="Acme Shoes"
+                  required
+                />
+              </Field>
+
+              <Field label="Your name">
+                <Input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Shiva"
+                  required
+                />
+              </Field>
+
+              <Field label="Email">
+                <Input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="admin@company.com"
+                  required
+                />
+              </Field>
+
+              <Field label="Password">
+                <Input
+                  type="password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="At least 8 characters"
+                  minLength={8}
+                  required
+                />
+              </Field>
+
+              {error ? <Alert>{error}</Alert> : null}
+
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? "Creating workspace..." : "Create workspace"}
+              </Button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-ink-muted">
+              Already have an account?{" "}
+              <Link to="/login" className="font-semibold text-brand hover:text-brand-dark">
+                Sign in
+              </Link>
             </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <label className="block">
-              <span className="text-sm font-medium text-[#243241]">Company name</span>
-              <input
-                type="text"
-                name="organizationName"
-                value={form.organizationName}
-                onChange={handleChange}
-                className="mt-2 w-full rounded-lg border border-[#cfd8e3] px-4 py-3 text-sm outline-none transition focus:border-[#145c72] focus:ring-4 focus:ring-[#145c72]/10"
-                placeholder="Acme Shoes"
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-[#243241]">Your name</span>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                className="mt-2 w-full rounded-lg border border-[#cfd8e3] px-4 py-3 text-sm outline-none transition focus:border-[#145c72] focus:ring-4 focus:ring-[#145c72]/10"
-                placeholder="Shiva"
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-[#243241]">Email</span>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                className="mt-2 w-full rounded-lg border border-[#cfd8e3] px-4 py-3 text-sm outline-none transition focus:border-[#145c72] focus:ring-4 focus:ring-[#145c72]/10"
-                placeholder="admin@company.com"
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-[#243241]">Password</span>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                className="mt-2 w-full rounded-lg border border-[#cfd8e3] px-4 py-3 text-sm outline-none transition focus:border-[#145c72] focus:ring-4 focus:ring-[#145c72]/10"
-                placeholder="At least 8 characters"
-                minLength={8}
-                required
-              />
-            </label>
-
-            {error && (
-              <div className="rounded-lg border border-[#f0c8c8] bg-[#fff5f5] px-4 py-3 text-sm text-[#a33a3a]">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-lg bg-[#145c72] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#104a5c] disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? "Creating workspace..." : "Create workspace"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-[#6b7886]">
-            Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-[#145c72]">
-              Login
-            </Link>
-          </p>
-        </div>
+          </CardBody>
+        </Card>
       </section>
     </PageShell>
   );

@@ -6,6 +6,7 @@ httpx
 pypdf
 mammoth
 langchain-text-splitters
+langchain-core
 langchain-huggingface
 sentence-transformers
 pinecone

@@ -42,3 +42,39 @@ def upsert_document_chunks(
 
     for start in range(0, len(vectors), 50):
         pinecone_index.upsert(vectors=vectors[start : start + 50])
+
+
+def query_organization_chunks(
+    organization_id: str,
+    query_embedding: list[float],
+    top_k: int = 5,
+) -> list[dict]:
+    pinecone_index = _index()
+    result = pinecone_index.query(
+        vector=query_embedding,
+        top_k=top_k,
+        include_metadata=True,
+        filter={"organizationId": {"$eq": organization_id}},
+    )
+
+    matches = []
+
+    for match in result.matches:
+        metadata = match.metadata or {}
+        matches.append(
+            {
+                "text": metadata.get("text", ""),
+                "fileName": metadata.get("fileName", ""),
+                "documentId": metadata.get("documentId", ""),
+                "chunkIndex": int(metadata.get("chunkIndex", 0)),
+                "score": float(match.score or 0),
+            }
+        )
+
+    return matches
+
+
+def delete_document_vectors(document_id: str) -> None:
+    """Delete all vectors for a given document by filtering on metadata.documentId."""
+    pinecone_index = _index()
+    pinecone_index.delete(filter={"documentId": {"$eq": document_id}})

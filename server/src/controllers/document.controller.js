@@ -1,6 +1,8 @@
 import Document from "../models/Document.js";
 import { ingestDocument } from "../services/ragApi.service.js";
 import { uploadBufferToCloudinary } from "../services/cloudinary.service.js";
+import cloudinary from "../config/cloudinary.js";
+import { deleteDocument as deleteDocumentInRag } from "../services/ragApi.service.js";
 
 const mimeToFileType = {
   "application/pdf": "pdf",
@@ -100,6 +102,41 @@ export async function getDocumentFile(req, res, next) {
     res.setHeader("Content-Length", fileBuffer.length);
 
     return res.send(fileBuffer);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function deleteDocument(req, res, next) {
+  try {
+    const document = await Document.findOne({
+      _id: req.params.id,
+      organizationId: req.user.organizationId,
+    });
+
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    // Delete from Cloudinary (raw resource)
+    try {
+      await cloudinary.uploader.destroy(document.cloudinaryPublicId, { resource_type: "raw" });
+    } catch (err) {
+      // log and continue
+      console.warn("Cloudinary deletion failed:", err.message || err);
+    }
+
+    // Request RAG service to remove vectors from vector DB
+    try {
+      await deleteDocumentInRag(document._id.toString(), document.organizationId.toString());
+    } catch (err) {
+      console.warn("RAG service deletion failed:", err.response?.data || err.message || err);
+    }
+
+    // Remove document record from MongoDB
+    await Document.deleteOne({ _id: document._id });
+
+    return res.json({ success: true });
   } catch (error) {
     return next(error);
   }

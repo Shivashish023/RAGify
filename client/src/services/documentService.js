@@ -26,3 +26,8 @@ export async function getDocumentFile(documentId, download = false) {
 
   return data;
 }
+
+export async function deleteDocument(documentId) {
+  const { data } = await api.delete(`/documents/${documentId}`);
+  return data;
+}

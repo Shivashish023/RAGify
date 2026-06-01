@@ -19,3 +19,23 @@ export async function ingestDocument(document) {
 
   return data;
 }
+
+export async function answerQuestion({ organizationId, question, topK = 5 }) {
+  const { data } = await ragApi.post(
+    "/api/answer",
+    {
+      organizationId: organizationId.toString(),
+      question,
+      topK,
+    },
+    { timeout: 90000 },
+  );
+
+  return data;
+}
+
+export async function deleteDocument(documentId) {
+  const { data } = await ragApi.delete(`/api/document/${documentId}`);
+
+  return data;
+}

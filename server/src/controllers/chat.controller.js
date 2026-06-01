@@ -2,6 +2,7 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import Organization from "../models/Organization.js";
 import Visitor from "../models/Visitor.js";
+import { answerQuestion } from "../services/ragApi.service.js";
 
 async function findOrganization(slug) {
   return Organization.findOne({ slug, chatbotStatus: "active" });
@@ -82,7 +83,23 @@ export async function sendMessage(req, res, next) {
       content: message,
     });
 
-    const replyText = "Thanks for your message. The AI knowledge base will be connected soon.";
+    let replyText = "I could not find relevant information in this company's documents yet.";
+
+    try {
+      const { answer } = await answerQuestion({
+        organizationId: organization._id,
+        question: message,
+        topK: 5,
+      });
+
+      if (answer) {
+        replyText = answer;
+      }
+    } catch (ragError) {
+      replyText =
+        "I could not search the company documents right now. Please try again in a moment.";
+      console.error("RAG answer failed:", ragError.response?.data || ragError.message);
+    }
 
     const assistantMessage = await Message.create({
       organizationId: organization._id,
