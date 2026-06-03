@@ -92,6 +92,12 @@ PINECONE_INDEX_NAME=ragify
 MIN_MATCH_SCORE=0.35
 ```
 
+### 3. Client Web App config (`client/.env`)
+Create `client/.env` file:
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
 ---
 
 ## 🚀 Local Installation & Execution
