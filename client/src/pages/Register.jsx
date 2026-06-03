@@ -44,80 +44,85 @@ function Register() {
   return (
     <PageShell>
       <Navbar />
-      <section className="mx-auto grid min-h-[calc(100vh-65px)] max-w-6xl gap-10 px-5 py-12 lg:grid-cols-2 lg:items-center">
+      <section className="mx-auto grid min-h-[calc(100vh-80px)] max-w-5xl gap-12 px-5 py-12 lg:grid-cols-2 lg:items-center">
         <PageHeader
           className="mb-0"
-          eyebrow="Get started"
-          title="Register your company"
-          description="Create your organization, admin account, and a public chatbot URL in one step."
+          eyebrow="Onboarding"
+          title="Create tenant workspace"
+          description="Register your organization, build your custom knowledge repository, and deploy a customer chatbot in seconds."
         />
 
-        <Card className="animate-fade-up stagger-2">
-          <CardBody>
-            <h2 className="font-display text-2xl font-semibold text-ink">Company registration</h2>
-            <p className="mt-2 text-sm text-ink-muted">You will be the admin for this workspace.</p>
+        <div className="relative animate-fade-up stagger-2">
+          {/* Ambient Glow */}
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-brand to-accent opacity-20 blur-lg" />
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-              <Field label="Company name">
-                <Input
-                  type="text"
-                  name="organizationName"
-                  value={form.organizationName}
-                  onChange={handleChange}
-                  placeholder="Acme Shoes"
-                  required
-                />
-              </Field>
+          <Card className="relative overflow-hidden border border-white/10 bg-slate-900/40">
+            <CardBody>
+              <h2 className="font-display text-2xl font-semibold text-white">Company registration</h2>
+              <p className="mt-1 text-sm text-ink-muted">You will be the primary administrator.</p>
 
-              <Field label="Your name">
-                <Input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="Shiva"
-                  required
-                />
-              </Field>
+              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                <Field label="Organization Name">
+                  <Input
+                    type="text"
+                    name="organizationName"
+                    value={form.organizationName}
+                    onChange={handleChange}
+                    placeholder="e.g., Acme Corporation"
+                    required
+                  />
+                </Field>
 
-              <Field label="Email">
-                <Input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="admin@company.com"
-                  required
-                />
-              </Field>
+                <Field label="Admin Name">
+                  <Input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="Your full name"
+                    required
+                  />
+                </Field>
 
-              <Field label="Password">
-                <Input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="At least 8 characters"
-                  minLength={8}
-                  required
-                />
-              </Field>
+                <Field label="Admin Email Address">
+                  <Input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="admin@company.com"
+                    required
+                  />
+                </Field>
 
-              {error ? <Alert>{error}</Alert> : null}
+                <Field label="Workspace Password">
+                  <Input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Min. 8 characters"
+                    minLength={8}
+                    required
+                  />
+                </Field>
 
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                {isSubmitting ? "Creating workspace..." : "Create workspace"}
-              </Button>
-            </form>
+                {error ? <Alert>{error}</Alert> : null}
 
-            <p className="mt-6 text-center text-sm text-ink-muted">
-              Already have an account?{" "}
-              <Link to="/login" className="font-semibold text-brand hover:text-brand-dark">
-                Sign in
-              </Link>
-            </p>
-          </CardBody>
-        </Card>
+                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                  {isSubmitting ? "Provisioning..." : "Provision Workspace"}
+                </Button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-ink-muted">
+                Already registered?{" "}
+                <Link to="/login" className="font-semibold text-brand-glow hover:text-white transition-colors duration-200">
+                  Sign in
+                </Link>
+              </p>
+            </CardBody>
+          </Card>
+        </div>
       </section>
     </PageShell>
   );

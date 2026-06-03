@@ -1,7 +1,7 @@
 function Card({ children, className = "", flat = false, ...props }) {
   return (
     <div
-      className={`${flat ? "card-surface-flat" : "card-surface"} ${className}`}
+      className={`${flat ? "card-surface-flat" : "card-surface"} transition-all duration-300 ${className}`}
       {...props}
     >
       {children}
@@ -11,7 +11,7 @@ function Card({ children, className = "", flat = false, ...props }) {
 
 function CardHeader({ children, className = "" }) {
   return (
-    <div className={`border-b border-border px-6 py-4 ${className}`}>{children}</div>
+    <div className={`border-b border-border/40 px-6 py-4 ${className}`}>{children}</div>
   );
 }
 

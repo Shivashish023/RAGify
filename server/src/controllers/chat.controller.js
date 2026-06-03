@@ -28,35 +28,26 @@ export async function startChat(req, res, next) {
       { new: true, upsert: true, runValidators: true },
     );
 
-    const conversation = await Conversation.create({
-      organizationId: organization._id,
-      visitorId: visitor._id,
-    });
-
     return res.status(201).json({
       visitor: {
         id: visitor._id,
         name: visitor.name,
         email: visitor.email,
       },
-      conversation: {
-        id: conversation._id,
-        status: conversation.status,
-      },
+      conversation: null,
     });
   } catch (error) {
     return next(error);
   }
 }
 
-export async function sendMessage(req, res, next) {
+export async function getConversation(req, res, next) {
   try {
-    const { conversationId, visitorId, message } = req.body;
+    const { conversationId } = req.params;
+    const { visitorId } = req.query;
 
-    if (!conversationId || !visitorId || !message) {
-      return res.status(400).json({
-        message: "Conversation ID, visitor ID, and message are required",
-      });
+    if (!visitorId) {
+      return res.status(400).json({ message: "visitorId is required" });
     }
 
     const organization = await findOrganization(req.params.slug);
@@ -69,8 +60,146 @@ export async function sendMessage(req, res, next) {
       _id: conversationId,
       visitorId,
       organizationId: organization._id,
-      status: "active",
     });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
+
+    const visitor = await Visitor.findOne({
+      _id: visitorId,
+      organizationId: organization._id,
+    });
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    const messages = await Message.find({
+      conversationId: conversation._id,
+      organizationId: organization._id,
+    }).sort({ createdAt: 1 });
+
+    return res.json({
+      visitor: {
+        id: visitor._id,
+        name: visitor.name,
+        email: visitor.email,
+      },
+      conversation: {
+        id: conversation._id,
+        status: conversation.status,
+      },
+      messages: messages.map((entry) => ({
+        id: entry._id,
+        sender: entry.sender,
+        content: entry.content,
+      })),
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function listVisitorConversations(req, res, next) {
+  try {
+    const { visitorId } = req.params;
+    const organization = await findOrganization(req.params.slug);
+
+    if (!organization) {
+      return res.status(404).json({ message: "Chatbot not found" });
+    }
+
+    const visitor = await Visitor.findOne({
+      _id: visitorId,
+      organizationId: organization._id,
+    });
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    const conversations = await Conversation.find({
+      organizationId: organization._id,
+      visitorId,
+    })
+      .sort({ lastMessageAt: -1 })
+      .limit(25);
+
+    const hasVisitorMessageIds = new Set(
+      (
+        await Message.distinct("conversationId", {
+          organizationId: organization._id,
+          sender: "visitor",
+          conversationId: { $in: conversations.map((c) => c._id) },
+        })
+      ).map((value) => value.toString()),
+    );
+
+    const enriched = await Promise.all(
+      conversations
+        .filter((conversation) => hasVisitorMessageIds.has(conversation._id.toString()))
+        .map(async (conversation) => {
+        const lastMessage = await Message.findOne({
+          organizationId: organization._id,
+          conversationId: conversation._id,
+        }).sort({ createdAt: -1 });
+
+        return {
+          id: conversation._id,
+          status: conversation.status,
+          lastMessageAt: conversation.lastMessageAt,
+          createdAt: conversation.createdAt,
+          preview: lastMessage?.content ? String(lastMessage.content).slice(0, 140) : "",
+        };
+      }),
+    );
+
+    return res.json({
+      visitor: { id: visitor._id, name: visitor.name, email: visitor.email },
+      conversations: enriched,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function sendMessage(req, res, next) {
+  try {
+    const { conversationId, visitorId, message } = req.body;
+
+    if (!visitorId || !message) {
+      return res.status(400).json({
+        message: "Visitor ID and message are required",
+      });
+    }
+
+    const organization = await findOrganization(req.params.slug);
+
+    if (!organization) {
+      return res.status(404).json({ message: "Chatbot not found" });
+    }
+
+    const visitor = await Visitor.findOne({
+      _id: visitorId,
+      organizationId: organization._id,
+    });
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    const conversation = conversationId
+      ? await Conversation.findOne({
+          _id: conversationId,
+          visitorId,
+          organizationId: organization._id,
+          status: "active",
+        })
+      : await Conversation.create({
+          organizationId: organization._id,
+          visitorId: visitor._id,
+        });
 
     if (!conversation) {
       return res.status(404).json({ message: "Conversation not found" });
@@ -112,6 +241,10 @@ export async function sendMessage(req, res, next) {
     await conversation.save();
 
     return res.json({
+      conversation: {
+        id: conversation._id,
+        status: conversation.status,
+      },
       visitorMessage: {
         id: visitorMessage._id,
         sender: visitorMessage.sender,

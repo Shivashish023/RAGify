@@ -39,59 +39,64 @@ function Login() {
   return (
     <PageShell>
       <Navbar />
-      <section className="mx-auto grid min-h-[calc(100vh-65px)] max-w-6xl gap-10 px-5 py-12 lg:grid-cols-2 lg:items-center">
+      <section className="mx-auto grid min-h-[calc(100vh-80px)] max-w-5xl gap-12 px-5 py-12 lg:grid-cols-2 lg:items-center">
         <PageHeader
           className="mb-0 lg:mb-0"
-          eyebrow="Welcome back"
-          title="Sign in to your workspace"
-          description="Access your dashboard, manage documents, and copy your public chatbot link."
+          eyebrow="Authentication"
+          title="Sign in to your console"
+          description="Access your tenant dashboard, upload new files to your vector index, and retrieve integration keys."
         />
 
-        <Card className="animate-fade-up stagger-2">
-          <CardBody>
-            <h2 className="font-display text-2xl font-semibold text-ink">Login</h2>
-            <p className="mt-2 text-sm text-ink-muted">
-              Use the admin credentials from your company registration.
-            </p>
+        <div className="relative animate-fade-up stagger-2">
+          {/* Ambient Glow */}
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-brand to-accent opacity-20 blur-lg" />
+          
+          <Card className="relative overflow-hidden border border-white/10 bg-slate-900/40">
+            <CardBody>
+              <h2 className="font-display text-2xl font-semibold text-white">Login</h2>
+              <p className="mt-1 text-sm text-ink-muted">
+                Enter your administrative credentials to continue.
+              </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-              <Field label="Email">
-                <Input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="admin@company.com"
-                  required
-                />
-              </Field>
+              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                <Field label="Email Address">
+                  <Input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="admin@company.com"
+                    required
+                  />
+                </Field>
 
-              <Field label="Password">
-                <Input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  required
-                />
-              </Field>
+                <Field label="Security Password">
+                  <Input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Enter your security password"
+                    required
+                  />
+                </Field>
 
-              {error ? <Alert>{error}</Alert> : null}
+                {error ? <Alert>{error}</Alert> : null}
 
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                {isSubmitting ? "Signing in..." : "Sign in"}
-              </Button>
-            </form>
+                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                  {isSubmitting ? "Verifying..." : "Sign In to Workspace"}
+                </Button>
+              </form>
 
-            <p className="mt-6 text-center text-sm text-ink-muted">
-              Need a workspace?{" "}
-              <Link to="/register" className="font-semibold text-brand hover:text-brand-dark">
-                Register your company
-              </Link>
-            </p>
-          </CardBody>
-        </Card>
+              <p className="mt-6 text-center text-sm text-ink-muted">
+                Need a new workspace?{" "}
+                <Link to="/register" className="font-semibold text-brand-glow hover:text-white transition-colors duration-200">
+                  Register organization
+                </Link>
+              </p>
+            </CardBody>
+          </Card>
+        </div>
       </section>
     </PageShell>
   );

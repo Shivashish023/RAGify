@@ -1,8 +1,8 @@
 function Alert({ children, variant = "error" }) {
   const styles = {
-    error: "border-danger/20 bg-danger-bg text-danger",
-    success: "border-success/20 bg-success-bg text-success",
-    info: "border-brand/20 bg-brand-light text-brand-dark",
+    error: "border-danger/30 bg-danger-bg/50 text-danger",
+    success: "border-success/30 bg-success-bg/50 text-success",
+    info: "border-brand/30 bg-brand-light/50 text-white",
   };
 
   return (

@@ -107,19 +107,19 @@ function Documents() {
           description="Add PDF, DOCX, or TXT files. They are chunked, embedded in Pinecone, and used to answer customer questions."
         />
 
-        <Card className="animate-fade-up">
+        <Card className="animate-fade-up border border-white/10 bg-slate-900/40 backdrop-blur-md">
           <CardBody>
-            <form onSubmit={handleUpload} className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-              <Field label="Document file">
+            <form onSubmit={handleUpload} className="grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
+              <Field label="Drag or browse knowledge document">
                 <input
                   type="file"
                   accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                   onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-                  className="w-full rounded-xl border border-dashed border-border-strong bg-surface-raised px-4 py-4 text-sm text-ink-muted file:mr-4 file:rounded-lg file:border-0 file:bg-brand-light file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand transition hover:border-brand/40"
+                  className="w-full rounded-xl border-2 border-dashed border-white/10 bg-slate-950/40 px-5 py-6 text-sm text-ink-muted file:mr-4 file:rounded-lg file:border-0 file:bg-brand/10 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-brand-glow file:cursor-pointer transition-all hover:border-brand/40 cursor-pointer"
                 />
               </Field>
-              <Button type="submit" size="lg" disabled={uploadStatus === "uploading"}>
-                {uploadStatus === "uploading" ? "Uploading..." : "Upload"}
+              <Button type="submit" size="lg" className="h-[54px] min-w-[120px]" disabled={uploadStatus === "uploading"}>
+                {uploadStatus === "uploading" ? "Uploading..." : "Upload File"}
               </Button>
             </form>
             {error ? (
@@ -130,29 +130,29 @@ function Documents() {
           </CardBody>
         </Card>
 
-        <Card className="mt-8 animate-fade-up stagger-2 overflow-hidden">
-          <CardHeader>
-            <h2 className="font-display text-lg font-semibold text-ink">Uploaded documents</h2>
+        <Card className="mt-8 animate-fade-up stagger-2 overflow-hidden border border-white/10 bg-slate-900/40 backdrop-blur-md">
+          <CardHeader className="border-b border-white/5 px-6 py-4.5 bg-slate-950/10">
+            <h2 className="font-display text-lg font-semibold text-white">Uploaded documents</h2>
           </CardHeader>
 
           {status === "loading" && (
             <CardBody>
-              <p className="text-sm text-ink-muted">Loading documents...</p>
+              <p className="text-sm text-ink-muted">Retrieving knowledge files...</p>
             </CardBody>
           )}
 
           {status === "error" && (
             <CardBody>
-              <Alert>Unable to load documents.</Alert>
+              <Alert>Unable to load knowledge repository files.</Alert>
             </CardBody>
           )}
 
           {status === "ready" && documents.length === 0 && (
             <CardBody>
-              <div className="rounded-xl border border-dashed border-border-strong bg-surface-raised px-6 py-12 text-center">
-                <p className="font-display text-lg font-semibold text-ink">No documents yet</p>
-                <p className="mt-2 text-sm text-ink-muted">
-                  Upload your first file to power the support chatbot.
+              <div className="rounded-xl border border-dashed border-white/10 bg-slate-950/40 px-6 py-14 text-center">
+                <p className="font-display text-lg font-semibold text-white">No files processed yet</p>
+                <p className="mt-2 text-sm text-ink-muted max-w-sm mx-auto">
+                  Upload your company policies, manuals, or reference guides to ground the chatbot's answers.
                 </p>
               </div>
             </CardBody>
@@ -161,35 +161,36 @@ function Documents() {
           {status === "ready" && documents.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
-                <thead className="bg-surface-raised text-ink-muted">
+                <thead className="bg-slate-950/40 text-ink-muted border-b border-white/5">
                   <tr>
-                    <th className="px-6 py-3.5 font-semibold">File</th>
-                    <th className="px-6 py-3.5 font-semibold">Type</th>
-                    <th className="px-6 py-3.5 font-semibold">Status</th>
-                    <th className="px-6 py-3.5 font-semibold">Uploaded</th>
-                    <th className="px-6 py-3.5 font-semibold">Actions</th>
+                    <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-[11px]">File Name</th>
+                    <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-[11px]">Format</th>
+                    <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-[11px]">Indexing Status</th>
+                    <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-[11px]">Processed</th>
+                    <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-[11px] text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-white/5">
                   {documents.map((document) => (
-                    <tr key={document._id} className="transition hover:bg-brand-light/30">
-                      <td className="px-6 py-4 font-medium text-ink">{document.originalName}</td>
-                      <td className="px-6 py-4 uppercase text-ink-muted">{document.fileType}</td>
+                    <tr key={document._id} className="transition duration-150 hover:bg-white/[0.02]">
+                      <td className="px-6 py-4 font-medium text-white">{document.originalName}</td>
+                      <td className="px-6 py-4 uppercase text-xs font-semibold text-ink-muted">{document.fileType}</td>
                       <td className="px-6 py-4">
                         <Badge variant={statusVariant(document.status)}>{document.status}</Badge>
                         {document.status === "failed" && document.errorMessage ? (
-                          <p className="mt-2 max-w-xs text-xs leading-5 text-danger">
+                          <p className="mt-2 max-w-xs text-xs leading-5 text-danger bg-danger-bg/25 border border-danger/25 p-2 rounded-lg">
                             {document.errorMessage}
                           </p>
                         ) : null}
                       </td>
-                      <td className="px-6 py-4 text-ink-muted">{formatDate(document.createdAt)}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-3">
+                      <td className="px-6 py-4 text-xs text-ink-muted">{formatDate(document.createdAt)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex gap-2.5 justify-end">
                           <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="sm"
                             type="button"
+                            className="px-3.5 py-1.5 text-xs font-semibold border-white/5 hover:border-brand/40 hover:bg-brand/10 text-white"
                             onClick={() => handleFileAction(document)}
                           >
                             Open
@@ -198,6 +199,7 @@ function Documents() {
                             variant="danger"
                             size="sm"
                             type="button"
+                            className="px-3.5 py-1.5 text-xs font-semibold border-transparent"
                             onClick={() => handleDelete(document._id)}
                           >
                             Delete

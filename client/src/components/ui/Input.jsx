@@ -1,6 +1,6 @@
 function Label({ children, htmlFor, className = "" }) {
   return (
-    <label htmlFor={htmlFor} className={`mb-2 block text-sm font-medium text-ink ${className}`}>
+    <label htmlFor={htmlFor} className={`mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted ${className}`}>
       {children}
     </label>
   );
@@ -9,7 +9,7 @@ function Label({ children, htmlFor, className = "" }) {
 function Input({ className = "", ...props }) {
   return (
     <input
-      className={`w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-sm text-ink outline-none transition placeholder:text-ink-faint focus:border-brand focus:ring-4 focus:ring-brand/10 ${className}`}
+      className={`w-full glass-input px-4 py-3 text-sm outline-none placeholder:text-ink-faint ${className}`}
       {...props}
     />
   );
@@ -17,7 +17,7 @@ function Input({ className = "", ...props }) {
 
 function Field({ label, children, className = "" }) {
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`space-y-1.5 ${className}`}>
       {label ? <Label>{label}</Label> : null}
       {children}
     </div>

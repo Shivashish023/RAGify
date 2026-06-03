@@ -2,23 +2,37 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import PageShell from "../components/layout/PageShell";
 import {
+  getPublicConversation,
+  getVisitorConversations,
   getPublicOrganization,
   sendPublicMessage,
   startPublicChat,
 } from "../services/publicService";
+import {
+  clearChatSession,
+  getStoredChatSession,
+  saveChatSession,
+} from "../utils/chatSessionStorage";
 import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
 import { Card, CardBody } from "../components/ui/Card";
 import { Field, Input } from "../components/ui/Input";
 import { Eyebrow } from "../components/ui/PageHeader";
+import LeadForm from "../components/chat/LeadForm";
+import ChatSidebar from "../components/chat/ChatSidebar";
+import ChatMessages from "../components/chat/ChatMessages";
 
 function PublicChat() {
   const { slug } = useParams();
-  const messagesEndRef = useRef(null);
   const [organization, setOrganization] = useState(null);
   const [status, setStatus] = useState("loading");
   const [visitor, setVisitor] = useState(null);
   const [conversation, setConversation] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [historyStatus, setHistoryStatus] = useState("idle");
+  const [showHistory, setShowHistory] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [hasStartedChat, setHasStartedChat] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: "", email: "" });
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -27,22 +41,112 @@ function PublicChat() {
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
-    async function loadOrganization() {
+    const stored = localStorage.getItem("ragify_chat_sidebar");
+    if (stored === "0") {
+      setIsSidebarOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initializeChat() {
+      setStatus("loading");
+      setError("");
+      setVisitor(null);
+      setConversation(null);
+      setMessages([]);
+      setHasStartedChat(false);
+
       try {
-        const data = await getPublicOrganization(slug);
-        setOrganization(data);
-        setStatus("ready");
+        const org = await getPublicOrganization(slug);
+        if (cancelled) {
+          return;
+        }
+
+        setOrganization(org);
+
+        const storedSession = getStoredChatSession(slug);
+
+        if (storedSession?.visitorId && storedSession?.conversationId) {
+          try {
+            const restored = await getPublicConversation(
+              slug,
+              storedSession.conversationId,
+              storedSession.visitorId,
+            );
+
+            if (cancelled) {
+              return;
+            }
+
+            if (restored.conversation.status !== "active") {
+              clearChatSession(slug);
+            } else {
+              setVisitor(restored.visitor);
+              setConversation(restored.conversation);
+              setMessages(restored.messages);
+              setHasStartedChat(true);
+              setLeadForm({
+                name: restored.visitor.name || "",
+                email: restored.visitor.email || "",
+              });
+            }
+          } catch {
+            if (!cancelled) {
+              clearChatSession(slug);
+            }
+          }
+        } else if (storedSession?.visitorId) {
+          setVisitor({ id: storedSession.visitorId });
+        }
+
+        if (!cancelled) {
+          setStatus("ready");
+        }
       } catch {
-        setStatus("error");
+        if (!cancelled) {
+          setStatus("error");
+        }
       }
     }
 
-    loadOrganization();
+    initializeChat();
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isSending]);
+    let cancelled = false;
+
+    async function loadHistory() {
+      if (!visitor?.id) {
+        setConversations([]);
+        setHistoryStatus("idle");
+        return;
+      }
+
+      setHistoryStatus("loading");
+      try {
+        const data = await getVisitorConversations(slug, visitor.id);
+        if (!cancelled) {
+          setConversations(data.conversations || []);
+          setHistoryStatus("ready");
+        }
+      } catch {
+        if (!cancelled) {
+          setHistoryStatus("error");
+        }
+      }
+    }
+
+    loadHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, visitor?.id]);
 
   const handleLeadChange = (event) => {
     const { name, value } = event.target;
@@ -57,7 +161,11 @@ function PublicChat() {
     try {
       const data = await startPublicChat(slug, leadForm);
       setVisitor(data.visitor);
-      setConversation(data.conversation);
+      saveChatSession(slug, {
+        visitorId: data.visitor.id,
+      });
+      setShowHistory(false);
+      setHasStartedChat(true);
       setMessages([
         {
           id: "welcome",
@@ -92,10 +200,15 @@ function PublicChat() {
 
     try {
       const data = await sendPublicMessage(slug, {
-        conversationId: conversation.id,
+        conversationId: conversation?.id,
         visitorId: visitor.id,
         message: pendingMessage.content,
       });
+
+      if (!conversation?.id && data.conversation?.id) {
+        setConversation(data.conversation);
+        saveChatSession(slug, { visitorId: visitor.id, conversationId: data.conversation.id });
+      }
 
       setMessages((current) => [
         ...current.filter((item) => item.id !== pendingMessage.id),
@@ -110,35 +223,94 @@ function PublicChat() {
     }
   };
 
+  const handleStartNewChat = async () => {
+    if (!visitor?.email || !visitor?.name) {
+      return;
+    }
+
+    setError("");
+    setIsStarting(true);
+
+    try {
+      const data = await startPublicChat(slug, { name: visitor.name, email: visitor.email });
+      saveChatSession(slug, {
+        visitorId: visitor.id,
+      });
+      setShowHistory(false);
+      setConversation(null);
+      setHasStartedChat(true);
+      setMessages([
+        {
+          id: "welcome",
+          sender: "assistant",
+          content: `Hi ${visitor.name}, how can I help you today?`,
+        },
+      ]);
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to start a new chat");
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const handleSwitchConversation = async (conversationId) => {
+    if (!visitor?.id) {
+      return;
+    }
+
+    setError("");
+    setIsSending(false);
+    setShowHistory(false);
+    setMessages([]);
+
+    try {
+      const restored = await getPublicConversation(slug, conversationId, visitor.id);
+      if (restored.conversation.status !== "active") {
+        clearChatSession(slug);
+        setConversation(null);
+        setMessages([]);
+        return;
+      }
+
+      setConversation(restored.conversation);
+      setMessages(restored.messages);
+      saveChatSession(slug, { visitorId: visitor.id, conversationId });
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to load that conversation");
+    }
+  };
+
+  const loadingLabel = getStoredChatSession(slug) ? "Restoring your chat..." : "Loading chatbot...";
+
   return (
     <PageShell variant="chat">
-      <section className="mx-auto flex min-h-screen max-w-3xl flex-col px-5 py-8 sm:py-12">
+      <section className="mx-auto flex h-screen max-w-5xl flex-col px-5 py-8 sm:py-12">
         <div className="mb-6 flex items-center justify-between">
           <Link
             to="/"
-            className="text-sm font-semibold text-ink-muted transition hover:text-brand"
+            className="text-sm font-semibold text-ink-muted transition-colors hover:text-white"
           >
             ← RAGify
           </Link>
           {organization ? (
-            <span className="rounded-full bg-success-bg px-3 py-1 text-xs font-semibold text-success">
+            <span className="rounded-full bg-success-bg/60 border border-success/30 px-3 py-1 text-xs font-semibold text-success">
               Support online
             </span>
           ) : null}
         </div>
 
-        <Card className="flex flex-1 flex-col overflow-hidden shadow-[var(--shadow-glow)] animate-fade-up">
-          <CardBody className="flex flex-1 flex-col p-0 sm:p-0">
+        <Card className="flex flex-1 min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-900/40 backdrop-blur-md shadow-[var(--shadow-glow)] animate-fade-up">
+          <CardBody className="flex flex-1 min-h-0 flex-col p-0 sm:p-0">
             {status === "loading" && (
               <div className="p-8">
-                <p className="text-sm font-medium text-ink-muted">Loading chatbot...</p>
+                <p className="text-sm font-medium text-ink-muted">{loadingLabel}</p>
               </div>
             )}
 
             {status === "error" && (
               <div className="p-8">
                 <Eyebrow>Not found</Eyebrow>
-                <h1 className="mt-3 font-display text-3xl font-semibold text-ink">
+                <h1 className="mt-3 font-display text-3xl font-semibold text-white">
                   This chatbot is not available.
                 </h1>
                 <Link to="/" className="mt-6 inline-block">
@@ -149,105 +321,139 @@ function PublicChat() {
 
             {status === "ready" && (
               <>
-                <div className="border-b border-border bg-linear-to-r from-brand/8 to-transparent px-6 py-6 sm:px-8">
-                  <Eyebrow>Support chat</Eyebrow>
-                  <h1 className="mt-2 font-display text-2xl font-semibold text-ink sm:text-3xl">
-                    {organization.name}
-                  </h1>
-                  <p className="mt-2 text-sm text-ink-muted">
-                    Ask questions about our products and policies — answers come from our documents.
-                  </p>
+                <div className="border-b border-white/5 bg-linear-to-r from-brand/10 to-transparent px-6 py-6 sm:px-8">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <Eyebrow>Document support gateway</Eyebrow>
+                      <h1 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">
+                        {organization.name}
+                      </h1>
+                      <p className="mt-2 text-xs text-ink-muted leading-relaxed">
+                        Ask questions about products, guidelines, and policies — answers are grounded in our document repository.
+                      </p>
+                    </div>
+                    {hasStartedChat && visitor ? (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="md:hidden"
+                          onClick={() => setShowHistory((current) => !current)}
+                        >
+                          History
+                        </Button>
+                         <button
+                          type="button"
+                          className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/60 hover:bg-brand-light border border-white/5 text-ink-muted hover:text-white cursor-pointer transition duration-200 shadow-sm"
+                          onClick={() => {
+                            setIsSidebarOpen((current) => {
+                              const next = !current;
+                              localStorage.setItem("ragify_chat_sidebar", next ? "1" : "0");
+                              return next;
+                            });
+                          }}
+                          title={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="transition-transform duration-200"
+                          >
+                            <rect width="18" height="18" x="3" y="3" rx="2" />
+                            <path d="M9 3v18" />
+                            {isSidebarOpen ? (
+                              <path d="m16 15-3-3 3-3" />
+                            ) : (
+                              <path d="m13 15 3-3-3-3" />
+                            )}
+                          </svg>
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
-                <div className="flex flex-1 flex-col p-6 sm:p-8">
-                  {!conversation ? (
-                    <form onSubmit={handleStartChat} className="mx-auto w-full max-w-md space-y-5">
-                      <p className="text-center text-sm text-ink-muted">
-                        Introduce yourself to start the conversation.
-                      </p>
-                      <Field label="Name">
-                        <Input
-                          type="text"
-                          name="name"
-                          value={leadForm.name}
-                          onChange={handleLeadChange}
-                          placeholder="Your name"
-                          required
-                        />
-                      </Field>
-                      <Field label="Email">
-                        <Input
-                          type="email"
-                          name="email"
-                          value={leadForm.email}
-                          onChange={handleLeadChange}
-                          placeholder="you@example.com"
-                          required
-                        />
-                      </Field>
-                      {error ? <Alert>{error}</Alert> : null}
-                      <Button type="submit" className="w-full" size="lg" disabled={isStarting}>
-                        {isStarting ? "Starting chat..." : "Start chat"}
-                      </Button>
-                    </form>
-                  ) : (
-                    <div className="flex min-h-[420px] flex-1 flex-col">
-                      <div className="flex-1 space-y-4 overflow-y-auto rounded-2xl border border-border bg-surface-raised p-4 sm:p-5">
-                        {messages.map((item) => (
-                          <div
-                            key={item.id}
-                            className={`flex ${item.sender === "visitor" ? "justify-end" : "justify-start"}`}
-                          >
-                            <div
-                              className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
-                                item.sender === "visitor"
-                                  ? "rounded-br-md bg-brand text-white"
-                                  : "rounded-bl-md border border-border bg-surface text-ink"
-                              } ${item.id.startsWith("pending") ? "opacity-70" : ""}`}
-                            >
-                              {item.sender === "assistant" ? (
-                                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-brand-glow">
-                                  Assistant
-                                </span>
-                              ) : null}
-                              <span className="whitespace-pre-wrap">{item.content}</span>
-                            </div>
-                          </div>
-                        ))}
-                        {isSending ? (
-                          <div className="flex justify-start">
-                            <div className="rounded-2xl rounded-bl-md border border-border bg-surface px-4 py-3">
-                              <span className="flex gap-1">
-                                <span className="h-2 w-2 animate-pulse-soft rounded-full bg-brand/60" />
-                                <span className="h-2 w-2 animate-pulse-soft rounded-full bg-brand/40 [animation-delay:0.2s]" />
-                                <span className="h-2 w-2 animate-pulse-soft rounded-full bg-brand/30 [animation-delay:0.4s]" />
-                              </span>
-                            </div>
-                          </div>
-                        ) : null}
-                        <div ref={messagesEndRef} />
-                      </div>
+                <div className="flex flex-1 min-h-0 flex-col p-6 sm:p-8">
+                  <div className="flex flex-1 min-h-0 flex-col gap-5 md:flex-row md:items-stretch">
+                    {hasStartedChat && visitor && isSidebarOpen ? (
+                      <aside className="hidden md:flex md:flex-col">
+                        <div className="flex w-[300px] min-h-0 flex-1 flex-col rounded-2xl border border-white/5 bg-slate-950/20 p-4">
+                          <ChatSidebar
+                            conversations={conversations}
+                            currentConversationId={conversation?.id}
+                            historyStatus={historyStatus}
+                            onSwitchConversation={handleSwitchConversation}
+                            onStartNewChat={handleStartNewChat}
+                            isStarting={isStarting}
+                          />
+                        </div>
+                      </aside>
+                    ) : null}
 
-                      {error ? (
-                        <div className="mt-4">
-                          <Alert>{error}</Alert>
+                    <div className="flex min-h-0 flex-1 flex-col">
+                       {showHistory && hasStartedChat && visitor ? (
+                        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md p-6 md:hidden animate-fade-up">
+                          <ChatSidebar
+                            conversations={conversations}
+                            currentConversationId={conversation?.id}
+                            historyStatus={historyStatus}
+                            onSwitchConversation={(id) => {
+                              handleSwitchConversation(id);
+                              setShowHistory(false);
+                            }}
+                            onStartNewChat={() => {
+                              handleStartNewChat();
+                              setShowHistory(false);
+                            }}
+                            isStarting={isStarting}
+                            showCloseButton={true}
+                            onClose={() => setShowHistory(false)}
+                          />
                         </div>
                       ) : null}
 
-                      <form onSubmit={handleSendMessage} className="mt-4 flex gap-2 sm:gap-3">
-                        <Input
-                          value={message}
-                          onChange={(event) => setMessage(event.target.value)}
-                          placeholder="Type your question..."
-                          disabled={isSending}
-                          className="min-w-0 flex-1"
+                      {!hasStartedChat ? (
+                        <LeadForm
+                          leadForm={leadForm}
+                          onLeadChange={handleLeadChange}
+                          onSubmit={handleStartChat}
+                          isStarting={isStarting}
+                          error={error}
                         />
-                        <Button type="submit" disabled={isSending} size="lg">
-                          {isSending ? "…" : "Send"}
-                        </Button>
-                      </form>
+                      ) : (
+                        <div className="flex min-h-0 flex-1 flex-col">
+                          <ChatMessages messages={messages} isSending={isSending} />
+
+                          {error ? (
+                            <div className="mt-4">
+                              <Alert>{error}</Alert>
+                            </div>
+                          ) : null}
+
+                          <form onSubmit={handleSendMessage} className="mt-4 flex gap-2 sm:gap-3">
+                            <Input
+                              value={message}
+                              onChange={(event) => setMessage(event.target.value)}
+                              placeholder="Type your question..."
+                              disabled={isSending}
+                              className="min-w-0 flex-1"
+                            />
+                            <Button type="submit" disabled={isSending} size="lg">
+                              {isSending ? "…" : "Send"}
+                            </Button>
+                          </form>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </>
             )}
