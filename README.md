@@ -172,3 +172,15 @@ Follow these steps to run all three layers concurrently.
 ### 2. Retrieval QA Loop
 * **Semantic Filter**: Visitor questions are embedded and matched against vectors filtered strictly on the metadata field `organizationId`.
 * **Synthesis**: Matches score-checked against `MIN_MATCH_SCORE`. Valid contexts are compiled into a prompt, and the `Qwen2.5-7B-Instruct` model synthesizes a customer support answer strictly aligned with matching documents.
+
+---
+
+## 🌐 Deployment Notes
+
+### SPA Routing on Vercel
+Single Page Applications (SPAs) that utilize client-side routing (like `react-router-dom`) will return a **404 Not Found** error when the page is reloaded on subroutes (e.g., `/dashboard` or `/login`). 
+
+This project includes a **[vercel.json](file:///c:/AiProjects/RAGify/client/vercel.json)** configuration file that instructs Vercel to redirect all subroute requests back to `index.html` so that React Router can process them. If you deploy from GitHub:
+1. Select the `client` directory as the project root directory.
+2. Vercel will automatically read `client/vercel.json` and map paths correctly.
+
