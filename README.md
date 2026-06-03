@@ -28,7 +28,7 @@ RAGify utilizes a dual-microservice backend architecture to separate web adminis
 
 1. **Client**: Built with **React 19**, **Vite**, and **TailwindCSS v4**, featuring a premium translucent dark glass interface with responsive hamburger navigation and full-screen drawer overlays on mobile.
 2. **API Gateway (server)**: A **Node.js + Express** server handling tenant authentication (JWT), metadata storage (MongoDB via Mongoose), file uploads (Multer + Cloudinary), and statistics logging.
-3. **RAG Service (zrag-service)**: A high-performance **FastAPI** Python microservice orchestrating document parsing, recursive character chunking, sentence embeddings extraction, and context-grounded LLM inference via **LangChain**.
+3. **RAG Service (zrag-service)**: A high-performance **FastAPI** Python microservice orchestrating document parsing, character chunking, and context-grounded LLM inference. Rather than hosting heavy model weights locally (which demands gigabytes of RAM), it queries the **Hugging Face Serverless Inference API** for embeddings (`all-MiniLM-L6-v2`) and text generation (`Qwen-2.5-Instruct`), keeping the active footprint below 150MB RAM (perfectly fitting within free hosting tiers like Render's 512MB limit).
 
 ---
 
