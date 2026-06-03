@@ -9,10 +9,12 @@ import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 const app = express();
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+// Clean allowed origin by stripping trailing slashes to avoid strict CORS mismatch errors
+const allowedOrigin = clientUrl.replace(/\/+$/, "");
 
 app.use(
   cors({
-    origin: clientUrl,
+    origin: allowedOrigin,
     credentials: true,
   }),
 );
